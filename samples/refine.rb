@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby -w
-#
+
 class A
   def foo
     "foo"

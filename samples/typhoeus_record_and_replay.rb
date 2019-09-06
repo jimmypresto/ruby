@@ -6,6 +6,7 @@ require 'typhoeus'
 module Typhoeus
   RECORD_OUTPUT_DIR = '/tmp'
   RECORD_FILENAME_PREFIX = "typhoeus_record_"
+
   class Request
     def on_complete_and_record(response)
       record_response(response)
@@ -18,14 +19,11 @@ module Typhoeus
     def record_response(response)
       return if response.nil?
       url = response.effective_url
-      filename = url.to_s.gsub(/[:\/\.\&\?\=\%]/, '_')
+      filename = url.to_s.gsub(/[:\/\.\&\?\=\%\+\-]+/, '_')
       filename = File.join(RECORD_OUTPUT_DIR, RECORD_FILENAME_PREFIX + filename)
       response = response.clone
+      # TODO: unmarshallable members: on_complete/on_complete_user/on_progress/on_success/etc
       response.request = nil
-      #response.request.instance_variable_set(:@on_complete, [])
-      #response.request.instance_variable_set(:@on_complete_user, [])
-      #response.request.instance_variable_set(:@on_progress, [])
-      #response.request.instance_variable_set(:@on_success, [])
       obj_blob = Object::Marshal.dump response
       File.open(filename, 'w') do |file|
         file.puts obj_blob

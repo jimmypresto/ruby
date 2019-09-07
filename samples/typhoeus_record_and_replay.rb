@@ -98,13 +98,22 @@ module Typhoeus
     end
   end
 end
- 
+
+class String
+  def truncate(cut_off_length_with_ellipsis: 120)
+    str = self
+    return str if str.to_s.empty?
+    return str if str.length <= cut_off_length_with_ellipsis
+    str.clone[0, cut_off_length_with_ellipsis] + "..."
+  end
+end
+
 url = 'https://raw.githubusercontent.com/jimmypresto/perf/master/ffmpeg.txt'
 r = Typhoeus::Request.new(url)
 r.on_complete do |response|
   p "on_complete: " + response.effective_url
-  p "on_complete: " + response.response_headers
-  p "on_complete: " + response.response_body
+  p "on_complete: " + response.response_headers.truncate
+  p "on_complete: " + response.response_body.truncate
 end
 
 r.run

@@ -11,14 +11,14 @@ module Typhoeus
     attr_accessor :record_mode
   end
 
-  Typhoeus.record_mode = Typhoeus::RECORD_MODE_REPLAY
+  Typhoeus.record_mode = Typhoeus::RECORD_MODE_NONE
   RECORD_OUTPUT_DIR = '/tmp'
   RECORD_FILENAME_PREFIX = "typhoeus_record_"
 
   class Request
     def run_on_complete_user(response)
       @on_complete_user.each do |callback|
-        callback.call(response)
+        callback.call(response) unless callback.to_s.include?("typhoeus_dvr")
       end
     end
 
@@ -106,27 +106,4 @@ class String
     return str if str.length <= cut_off_length_with_ellipsis
     str.clone[0, cut_off_length_with_ellipsis] + "..."
   end
-end
-
-url = 'https://raw.githubusercontent.com/jimmypresto/perf/master/ffmpeg.txt'
-r = Typhoeus::Request.new(url)
-r.on_complete do |response|
-  p "on_complete: " + response.effective_url
-  p "on_complete: " + response.response_headers.truncate
-  p "on_complete: " + response.response_body.truncate
-end
-
-r.run
-# hydra = Typhoeus::Hydra.new
-# hydra.queue r
-# hydra.run
- 
-p ""
-Dir.glob(File.join(Typhoeus::RECORD_OUTPUT_DIR, Typhoeus::RECORD_FILENAME_PREFIX + "*")) do |file|
-  response = Marshal.load File.read(file)
-  p "RECORD === #{file} ==="
-  p response.effective_url
-  p response.response_headers
-  p response.response_body
-  p ""
 end

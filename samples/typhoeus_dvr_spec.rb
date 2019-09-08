@@ -3,7 +3,6 @@
 
 require 'minitest/autorun'
 require_relative 'typhoeus_dvr'
-require 'typhoeus'
 
 def remove_previous_record(request)
   filename = request.url_to_filename(@url)
@@ -37,19 +36,25 @@ class TyphoeusDvrSpec < Minitest::Test
 
     describe "RecordMode" do
       it "Should write response to file too" do
+        received = false 
         Typhoeus.record_mode = Typhoeus::RECORD_MODE_RECORD
+        @request = Typhoeus::Request.new @url
         @request.on_complete.clear
         @request.on_complete do |response|
           verify_response(response, @url)
           verify_recorded_file(@filename, @url)
+          received = true
         end
         @request.run
+        received.must_equal true
 
         # Do it again using Hydra
+        received = false 
         remove_previous_record @request
         hydra = Typhoeus::Hydra.new
         hydra.queue @request
         hydra.run
+        received.must_equal true
         verify_recorded_file(@filename, @url)
       end
     end
@@ -57,14 +62,16 @@ class TyphoeusDvrSpec < Minitest::Test
     describe "ReplayMode" do
       it "Should replay response from file" do
         # First create a new record file
-        @request.on_complete.clear
+        received = false 
         Typhoeus.record_mode = Typhoeus::RECORD_MODE_RECORD
-        @request.on_complete.clear
+        @request = Typhoeus::Request.new @url
         @request.on_complete do |response|
           verify_response(response, @url)
           verify_recorded_file(@filename, @url)
+          received = true
         end
         @request.run
+        received.must_equal true
 
         # Calibrate record file to snafu url
         blob = File.read(@filename)
@@ -74,16 +81,20 @@ class TyphoeusDvrSpec < Minitest::Test
 
         # Now in replay mode
         Typhoeus.record_mode = Typhoeus::RECORD_MODE_REPLAY
-        @request.run
         @request.on_complete.clear
         @request.on_complete do |response|
           verify_response(response, calibrated_url)
+          received = true
         end
+        @request.run
+        received.must_equal true
 
         # Do it again using Hydra
+        received = false 
         hydra = Typhoeus::Hydra.new
         hydra.queue @request
         hydra.run
+        received.must_equal true
       end
     end
   end

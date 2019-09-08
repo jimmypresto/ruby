@@ -11,15 +11,17 @@ module Typhoeus
     attr_accessor :record_mode
   end
 
-  Typhoeus.record_mode = Typhoeus::RECORD_MODE_NONE
+  Typhoeus.record_mode = Typhoeus::RECORD_MODE_RECORD
   RECORD_OUTPUT_DIR = '/tmp'
   RECORD_FILENAME_PREFIX = "typhoeus_record_"
 
   class Request
     def run_on_complete_user(response)
+      return if @on_complete_user.nil?
       @on_complete_user.each do |callback|
-        callback.call(response) unless callback.to_s.include?("typhoeus_dvr")
+        callback.call(response) unless callback.to_s.include?("typhoeus_dvr.rb")
       end
+      @on_complete = @on_complete_user.clone
     end
 
     def on_complete_and_record(response)
@@ -45,7 +47,9 @@ module Typhoeus
     end
 
     def self.override_on_complete(request) 
-      request.instance_variable_set(:@on_complete_user, request.on_complete.clone)
+      unless request.on_complete.to_s.include? "typhoeus_dvr.rb"
+        request.instance_variable_set(:@on_complete_user, request.on_complete.clone)
+      end
       on_complete_ours = Request.instance_method(:on_complete_and_record).bind(request)
       request.on_complete.clear
       request.on_complete do |response|
@@ -96,14 +100,5 @@ module Typhoeus
         old_run.bind(self).call(*args)
       end
     end
-  end
-end
-
-class String
-  def truncate(cut_off_length_with_ellipsis: 120)
-    str = self
-    return str if str.to_s.empty?
-    return str if str.length <= cut_off_length_with_ellipsis
-    str.clone[0, cut_off_length_with_ellipsis] + "..."
   end
 end

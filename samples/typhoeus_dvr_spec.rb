@@ -80,6 +80,7 @@ class TyphoeusDvrSpec < Minitest::Test
         calibrated_url = 'http://snafu/'
 
         # Now in replay mode
+        received = false 
         Typhoeus.record_mode = Typhoeus::RECORD_MODE_REPLAY
         @request.on_complete.clear
         @request.on_complete do |response|

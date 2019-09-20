@@ -65,9 +65,9 @@ module Typhoeus
     def replay_recorded_response
       filename = url_to_filename(@base_url)
       self.response = Object::Marshal.load File.read(filename)
+      run_before_callback
       @on_complete_user = on_complete.clone
       run_on_complete_user(self.response)
-      run_before_callback
     end
 
     old_run = instance_method(:run)

@@ -1,8 +1,6 @@
 #!/usr/bin/env ruby -w
 # frozen_string_literal: true
 
-require 'typhoeus'
-
 module Typhoeus
   RECORD_MODE_NONE = 0
   RECORD_MODE_RECORD = 1
@@ -16,6 +14,13 @@ module Typhoeus
   RECORD_FILENAME_PREFIX = "typhoeus_record_"
 
   class Request
+    def run_before_callback
+      return if Typhoeus.before.nil?
+      Typhoeus.before.each do |callback|
+        callback.call(self)
+      end
+    end
+
     def run_on_complete_user(response)
       return if @on_complete_user.nil?
       @on_complete_user.each do |callback|
@@ -41,7 +46,7 @@ module Typhoeus
       # TODO: unmarshallable members: on_complete/on_complete_user/on_progress/on_success/etc
       response.request = nil
       obj_blob = Object::Marshal.dump response
-      File.open(filename, 'w') do |file|
+      File.open(filename, 'wb') do |file|
         file.puts obj_blob
       end
     end
@@ -59,9 +64,10 @@ module Typhoeus
 
     def replay_recorded_response
       filename = url_to_filename(@base_url)
-      response = Object::Marshal.load File.read(filename)
+      self.response = Object::Marshal.load File.read(filename)
       @on_complete_user = on_complete.clone
-      run_on_complete_user(response)
+      run_on_complete_user(self.response)
+      run_before_callback
     end
 
     old_run = instance_method(:run)

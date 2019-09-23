@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 require 'minitest/autorun'
+require 'typhoeus'
 require_relative 'typhoeus_dvr'
 
 def remove_previous_record(request)
@@ -32,6 +33,21 @@ class TyphoeusDvrSpec < Minitest::Test
 
     after do
       remove_previous_record @request
+    end
+
+    describe "EnvironmentVariable" do
+      it "Should overwrite the record mode variable" do
+        ENV['TYPHOEUS_DVR_MODE'] = Typhoeus::RECORD_MODE_NONE.to_s
+        load "typhoeus_dvr.rb"
+        Typhoeus.record_mode.must_equal Typhoeus::RECORD_MODE_NONE
+        ENV['TYPHOEUS_DVR_MODE'] = Typhoeus::RECORD_MODE_RECORD.to_s
+        load "typhoeus_dvr.rb"
+        Typhoeus.record_mode.must_equal Typhoeus::RECORD_MODE_RECORD
+        ENV['TYPHOEUS_DVR_MODE'] = Typhoeus::RECORD_MODE_REPLAY.to_s
+        load "typhoeus_dvr.rb"
+        Typhoeus.record_mode.must_equal Typhoeus::RECORD_MODE_REPLAY
+        ENV.delete('TYPHOEUS_DVR_MODE')
+      end
     end
 
     describe "RecordMode" do

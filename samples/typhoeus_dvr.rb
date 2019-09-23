@@ -9,9 +9,10 @@ module Typhoeus
     attr_accessor :record_mode
   end
 
-  Typhoeus.record_mode = Typhoeus::RECORD_MODE_RECORD
-  RECORD_OUTPUT_DIR = '/tmp'
-  RECORD_FILENAME_PREFIX = "typhoeus_record_"
+  Typhoeus.record_mode = ENV['TYPHOEUS_DVR_MODE'].to_i if ENV.key?('TYPHOEUS_DVR_MODE')
+  Typhoeus.record_mode ||= Typhoeus::RECORD_MODE_RECORD
+  RECORD_OUTPUT_DIR ||= '/tmp'
+  RECORD_FILENAME_PREFIX ||= "typhoeus_record_"
 
   class Request
     def run_before_callback

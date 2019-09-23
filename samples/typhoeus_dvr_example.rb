@@ -3,21 +3,39 @@
 
 require 'typhoeus'
 require_relative 'typhoeus_dvr'
+require 'benchmark'
 
 url = 'https://raw.githubusercontent.com/jimmypresto/ruby/master/samples/Gemfile'
 request = Typhoeus::Request.new url
+body = ''
 request.on_complete do |response|
-  p response.response_body
+  body = response.response_body
 end
 request.run
+fail if body == ""
 
 filename = request.url_to_filename url
 str = File.read(filename).gsub('typhoeus', 'TYPHOEUS')
 File.write(filename, str)
 
+body = ''
 Typhoeus.record_mode = Typhoeus::RECORD_MODE_REPLAY
 request.run
+fail if body == ""
 
+body = ''
 hydra = Typhoeus::Hydra.new
 hydra.queue request
 hydra.run
+fail if body == ""
+
+puts Benchmark.measure {
+  request.on_complete.clear
+  request.on_complete do |response|
+    fail if response.response_body != body
+  end
+  10_000.times do
+    Typhoeus.record_mode = Typhoeus::RECORD_MODE_REPLAY
+    request.run
+  end
+}

@@ -82,6 +82,8 @@ module Typhoeus
         old_run.bind(self).call(*args)
       when Typhoeus::RECORD_MODE_REPLAY
         self.replay_recorded_response
+      else
+        old_run.bind(self).call(*args)
       end
     end
   end
@@ -95,6 +97,8 @@ module Typhoeus
         Request.override_on_complete request
         old_queue.bind(self).call(*args)
       when Typhoeus::RECORD_MODE_REPLAY
+        old_queue.bind(self).call(*args)
+      else
         old_queue.bind(self).call(*args)
       end
     end

@@ -44,7 +44,8 @@ module Typhoeus
       return if response.nil?
       filename = url_to_filename(response.effective_url)
       response = response.clone
-      # TODO: unmarshallable members: on_complete/on_complete_user/on_progress/on_success/etc
+      # Requrest object is not marshallable, cuz Proc members, nullify it before we serialize the response object
+      # Later on when we deserialize response back, we have to use caller's request object and stash it in re-created response object
       response.request = nil
       obj_blob = Object::Marshal.dump response
       File.open(filename, 'wb') do |file|
@@ -66,9 +67,11 @@ module Typhoeus
     def replay_recorded_response
       filename = url_to_filename(@base_url)
       self.response = Object::Marshal.load File.read(filename)
+      self.response.request = self
       run_before_callback
       @on_complete_user = on_complete.clone
       run_on_complete_user(self.response)
+      self.response
     end
 
     old_run = instance_method(:run)

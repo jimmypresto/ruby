@@ -2,6 +2,8 @@ version: "3"
 services:
   web:
     build: .
+    security_opt:
+      - seccomp:unconfined
     volumes:
       - .:/usr/src/app
     ports:

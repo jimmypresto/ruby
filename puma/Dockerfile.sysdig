@@ -1,0 +1,53 @@
+FROM ruby:2.5-slim
+
+# Credits to https://raw.githubusercontent.com/etown/install-sysdig-module/master/Dockerfile
+ARG SYSDIGVER=0.26.2
+RUN apt-get update
+RUN apt-get install -y wget build-essential gcc binutils bc cmake kmod
+
+RUN \
+  export KERNELVER=`uname -r  | cut -d '-' -f 1`  && \
+  export KERNELDIR=/src/linux-$KERNELVER && \
+  mkdir /src && \
+  cd /src && \
+  wget https://www.kernel.org/pub/linux/kernel/v4.x/linux-$KERNELVER.tar.gz && \
+  tar zxf linux-$KERNELVER.tar.gz && \
+  cd /src/linux-$KERNELVER && \
+  zcat /proc/1/root/proc/config.gz > .config && \
+  make modules_prepare && \
+  mv .config /src/config && \
+  cd /src && \
+  wget https://github.com/draios/sysdig/archive/$SYSDIGVER.tar.gz && \
+  tar zxf $SYSDIGVER.tar.gz && \
+  mkdir -p /sysdig/build && \
+  cd /sysdig/build && \
+  cmake /src/sysdig-$SYSDIGVER && \
+  make driver
+  # make driver && \
+
+  # rm -rf /src && \
+  # apt-get remove -y wget ca-certificates \
+  #   build-essential gcc binutils \
+  #   bc \
+  #   cmake
+
+CMD ["insmod","/sysdig/build/driver/sysdig-probe.ko"]
+
+RUN apt-get update \
+    && apt-get install -y nginx \
+    && apt-get install -y build-essential \
+    && gem install bundler
+    #&& rm -rf /var/lib/apt/lists/*
+
+WORKDIR /usr/src/app
+COPY Gemfile* ./
+COPY nginx.conf ./
+COPY start.sh ./
+COPY app ./app
+COPY config ./config
+RUN bundle install
+
+RUN chmod +x /usr/src/app/start.sh
+
+EXPOSE 8080
+CMD ["/usr/src/app/start.sh"]

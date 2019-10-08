@@ -1,16 +1,36 @@
-#!/usr/bin/env ruby -w
+#!/usr/bin/env ruby -w 
 # frozen_string_literal: true
 
+require 'singleton'
+require 'benchmark'
+
+class ResponseCache
+  include Singleton
+  attr_accessor :data
+  def initialize
+    @data = {}
+  end
+  def add key, value
+    @data[key] = value
+  end 
+  def version
+    '0.0.1'
+  end 
+end
+
 module Typhoeus
-  RECORD_MODE_NONE = 0
-  RECORD_MODE_RECORD = 1
-  RECORD_MODE_REPLAY = 2
+  RECORD_MODE_NONE ||= 0
+  RECORD_MODE_RECORD ||= 1
+  RECORD_MODE_REPLAY ||= 2
   class << self
     attr_accessor :record_mode
+    attr_accessor :use_replay_time
   end
 
   Typhoeus.record_mode = ENV['TYPHOEUS_DVR_MODE'].to_i if ENV.key?('TYPHOEUS_DVR_MODE')
   Typhoeus.record_mode ||= Typhoeus::RECORD_MODE_RECORD
+  Typhoeus.use_replay_time = ENV['TYPHOEUS_USE_REPLAY_TIME'].to_i if ENV.key?('TYPHOEUS_USE_REPLAY_TIME')
+  Typhoeus.use_replay_time ||= 0
   RECORD_OUTPUT_DIR ||= '/tmp'
   RECORD_FILENAME_PREFIX ||= "typhoeus_record_"
 
@@ -64,9 +84,25 @@ module Typhoeus
       end
     end
 
-    def replay_recorded_response
+    def get_pre_recorded_response
       filename = url_to_filename(@base_url)
-      self.response = Object::Marshal.load File.read(filename)
+      return ResponseCache.instance.data[filename] if ResponseCache.instance.data.key?(filename) 
+      response = Object::Marshal.load File.read(filename)
+      ResponseCache.instance.data[filename] = response
+      response
+    end
+
+    def replay_recorded_response
+      response = nil
+      elapsed_seconds = Benchmark.realtime do
+        response = replay_recorded_response_internal
+      end 
+      response&.total_time = elapsed_seconds if Typhoeus.use_replay_time
+      response
+    end
+
+    def replay_recorded_response_internal
+      self.response = get_pre_recorded_response()
       self.response.request = self
       run_before_callback
       @on_complete_user = on_complete.clone

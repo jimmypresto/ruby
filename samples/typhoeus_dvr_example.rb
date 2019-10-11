@@ -4,7 +4,10 @@
 require 'typhoeus'
 require_relative 'typhoeus_dvr'
 require 'benchmark'
+require 'byebug'
 
+byebug
+TyphoeusDVR.record_mode = TyphoeusDVR::RECORD_MODE_RECORD
 url = 'https://raw.githubusercontent.com/jimmypresto/ruby/master/samples/Gemfile'
 request = Typhoeus::Request.new url
 body = ''
@@ -19,7 +22,7 @@ str = File.read(filename).gsub('typhoeus', 'TYPHOEUS')
 File.write(filename, str)
 
 body = ''
-Typhoeus.record_mode = Typhoeus::RECORD_MODE_REPLAY
+TyphoeusDVR.record_mode = TyphoeusDVR::RECORD_MODE_REPLAY
 request.run
 fail if body == ""
 
@@ -35,7 +38,7 @@ puts Benchmark.measure {
     fail if response.response_body != body
   end
   10_000.times do
-    Typhoeus.record_mode = Typhoeus::RECORD_MODE_REPLAY
+    TyphoeusDVR.record_mode = TyphoeusDVR::RECORD_MODE_REPLAY
     request.run
   end
 }

@@ -37,23 +37,29 @@ class TyphoeusDvrSpec < Minitest::Test
 
     describe "EnvironmentVariable" do
       it "Should overwrite the record mode variable" do
-        ENV['TYPHOEUS_DVR_MODE'] = Typhoeus::RECORD_MODE_NONE.to_s
+        ENV['TYPHOEUS_DVR_MODE'] = TyphoeusDVR::RECORD_MODE_NONE.to_s
         load "typhoeus_dvr.rb"
-        Typhoeus.record_mode.must_equal Typhoeus::RECORD_MODE_NONE
-        ENV['TYPHOEUS_DVR_MODE'] = Typhoeus::RECORD_MODE_RECORD.to_s
+        TyphoeusDVR.record_mode.must_equal TyphoeusDVR::RECORD_MODE_NONE
+        ENV['TYPHOEUS_DVR_MODE'] = TyphoeusDVR::RECORD_MODE_RECORD.to_s
         load "typhoeus_dvr.rb"
-        Typhoeus.record_mode.must_equal Typhoeus::RECORD_MODE_RECORD
-        ENV['TYPHOEUS_DVR_MODE'] = Typhoeus::RECORD_MODE_REPLAY.to_s
+        TyphoeusDVR.record_mode.must_equal TyphoeusDVR::RECORD_MODE_RECORD
+        ENV['TYPHOEUS_DVR_MODE'] = TyphoeusDVR::RECORD_MODE_REPLAY.to_s
         load "typhoeus_dvr.rb"
-        Typhoeus.record_mode.must_equal Typhoeus::RECORD_MODE_REPLAY
+        TyphoeusDVR.record_mode.must_equal TyphoeusDVR::RECORD_MODE_REPLAY
         ENV.delete('TYPHOEUS_DVR_MODE')
       end
     end
 
     describe "RecordMode" do
       it "Should write response to file too" do
+
+        # This test directly manipulates response file and expects dvr to read the changed file
+        # Without diabling caching, dvr may still return the unchanged file content back
+        TyphoeusDVR.response_caching_enabled = false
+        TyphoeusDVR.response_cache = Concurrent::Map.new
+
         received = false 
-        Typhoeus.record_mode = Typhoeus::RECORD_MODE_RECORD
+        TyphoeusDVR.record_mode = TyphoeusDVR::RECORD_MODE_RECORD
         @request = Typhoeus::Request.new @url
         @request.on_complete.clear
         @request.on_complete do |response|
@@ -77,9 +83,15 @@ class TyphoeusDvrSpec < Minitest::Test
 
     describe "ReplayMode" do
       it "Should replay response from file" do
+
+        # This test directly manipulates response file and expects dvr to read the changed file
+        # Without diabling caching, dvr may still return the unchanged file content back
+        TyphoeusDVR.response_caching_enabled = false
+        TyphoeusDVR.response_cache = Concurrent::Map.new
+
         # First create a new record file
         received = false 
-        Typhoeus.record_mode = Typhoeus::RECORD_MODE_RECORD
+        TyphoeusDVR.record_mode = TyphoeusDVR::RECORD_MODE_RECORD
         @request = Typhoeus::Request.new @url
         @request.on_complete do |response|
           verify_response(response, @url)
@@ -97,7 +109,7 @@ class TyphoeusDvrSpec < Minitest::Test
 
         # Now in replay mode
         received = false 
-        Typhoeus.record_mode = Typhoeus::RECORD_MODE_REPLAY
+        TyphoeusDVR.record_mode = TyphoeusDVR::RECORD_MODE_REPLAY
         @request.on_complete.clear
         @request.on_complete do |response|
           verify_response(response, calibrated_url)

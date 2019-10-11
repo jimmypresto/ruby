@@ -93,18 +93,12 @@ module Typhoeus
     end
 
     def replay_recorded_response
-      response = nil
-      elapsed_seconds = Benchmark.realtime do
-        response = replay_recorded_response_internal
-      end 
-      response&.total_time = elapsed_seconds if Typhoeus.use_replay_time
-      response
-    end
-
-    def replay_recorded_response_internal
       self.response = get_pre_recorded_response()
       self.response.request = self
-      run_before_callback
+      elapsed_seconds = Benchmark.realtime do
+        run_before_callback
+      end
+      self.response.options[:total_time] = elapsed_seconds if Typhoeus.use_replay_time
       @on_complete_user = on_complete.clone
       run_on_complete_user(self.response)
       self.response

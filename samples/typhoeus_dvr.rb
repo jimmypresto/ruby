@@ -4,12 +4,13 @@ require 'benchmark'
 require 'Concurrent'
 
 module TyphoeusDVR
-  RECORD_MODE_NONE ||= 0
-  RECORD_MODE_RECORD ||= 1
-  RECORD_MODE_REPLAY ||= 2
+  RECORD_MODE_NONE   ||= 0 # DVR does nothing; Typhoeus works as usual
+  RECORD_MODE_RECORD ||= 1 # DVR records every response Typhoeus gets
+  RECORD_MODE_REPLAY ||= 2 # DVR replays recorded responses when URL matches; otherwise Typhoeus request goes out
 
   RECORD_OUTPUT_DIR ||= ENV['TYPHOEUS_DVR_OUTPUT_DIR'] if ENV.key?('TYPHOEUS_DVR_OUTPUT_DIR')
   RECORD_OUTPUT_DIR ||= '/tmp' # Use tmp as it may be mapped to memory
+
   RECORD_FILENAME_PREFIX ||= ENV['TYPHOEUS_DVR_FILENAME_PREFIX'] if ENV.key?('TYPHOEUS_DVR_FILENAME_PREFIX')
   RECORD_FILENAME_PREFIX ||= "typhoeus_record_"
 
@@ -53,7 +54,7 @@ module Typhoeus
     end
 
     def url_to_filename(url)
-      # Remove environment specific variables (e.g. scheme, host, port)      
+      # Remove environment specific variables (e.g. scheme, host, port)
       uri = URI.parse(url)
       yammer_options = self.yammer_options if self.respond_to? :yammer_options
       unless yammer_options.nil?
@@ -69,8 +70,8 @@ module Typhoeus
       return if response.nil?
       filename = url_to_filename(response.effective_url)
 
-      # Request object is not marshallable, because Proc members, nullify it before we serialize the response object
-      # Later on when we deserialize response back, we have to use caller's request object and stash it in re-created response object
+      # Request object is not marshallable; nullify its Proc members before we serialize the response object
+      # Later when we deserialize the response back, we will use caller's request object and stash it in the response object
       recorded_response = response.clone
       recorded_response.request = nil
 
@@ -81,7 +82,8 @@ module Typhoeus
       end
     end
 
-    def self.override_on_complete(request) 
+    def self.override_on_complete(request)
+      # When DVR registers on_complete, we don't overwrite user's on_complete routine(s)
       unless request.on_complete.to_s.include? "typhoeus_dvr.rb"
         request.instance_variable_set(:@on_complete_user, request.on_complete.clone)
       end

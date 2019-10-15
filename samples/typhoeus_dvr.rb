@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 require 'benchmark'
-require 'Concurrent'
+# This requires concurrent-ruby gem
+require 'concurrent'
 
 module TyphoeusDVR
   RECORD_MODE_NONE   ||= 0 # DVR does nothing; Typhoeus works as usual

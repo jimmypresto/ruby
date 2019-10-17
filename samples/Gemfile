@@ -1,2 +1,5 @@
-require 'typhoeus'
-require 'minitest'
+source 'https://rubygems.org'
+gem 'typhoeus'
+gem 'minitest'
+gem 'logstash-logger'
+gem 'byebug'

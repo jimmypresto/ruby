@@ -1,7 +1,7 @@
 # gem install benchmark-ips
 require "benchmark/ips"
 
-def option_hash(options = {}); end
+def option_hash(options_is_hash); end
 def double_splat(**options); end
 def single_splat(*options); end
 

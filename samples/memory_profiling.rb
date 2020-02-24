@@ -1,6 +1,9 @@
 #!/bin/ruby
 # frozen_string_literal: true
 
+# See increases of free objects between 2nd and 3rd GC.stat
+# ruby memory_profiling.rb  | grep  ':total_freed_objects.[^,]*'
+
 # A type that can hold another thing
 class A
   attr_accessor :holding

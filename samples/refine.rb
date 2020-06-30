@@ -1,19 +1,19 @@
 #!/usr/bin/env ruby -w
 
-class A
-  def foo
-    "foo"
-  end
-end 
+require 'byebug'
 
-module B
-  refine A do
-    def foo
-      super + " refined by B.foo"
+module AA
+  refine String do
+    def hello
+      "hello, #{to_s}"
     end
   end
 end
 
-using B
-p A.new.foo
+using AA
+p 'world'.hello # this works
+
+require_relative 'refine_subordinate'
+
+p DD.dd # NoMethodError
 

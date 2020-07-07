@@ -15,5 +15,5 @@ p 'world'.hello # this works
 
 require_relative 'refine_subordinate'
 
-p DD.dd # NoMethodError
+p AA.dd # NoMethodError
 

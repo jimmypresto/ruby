@@ -3,10 +3,12 @@ require "benchmark/ips"
 
 class A
   def initialize(); end
-  def a_method(); end
+  def instance_method(); end
+  def self.class_method(); end
 end
 
 Benchmark.ips do |x|
-  x.report("an instance method direct call") { A.new.a_method }
-  x.report("an instance method call via .public_send") { A.new.public_send(:a_method) }
+  x.report("a class method direct call") { A.class_method }
+  x.report("an instance method direct call") { A.new.instance_method }
+  x.report("an instance method call via .public_send") { A.new.public_send(:instance_method) }
 end

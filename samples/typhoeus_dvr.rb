@@ -64,7 +64,11 @@ module Typhoeus
         uri.port = nil
       end
       filename = uri.to_s.gsub(/[:\/\.\&\?\=\%\+\-]+/, '_')
-      File.join(TyphoeusDVR::RECORD_OUTPUT_DIR, TyphoeusDVR::RECORD_FILENAME_PREFIX + filename)
+      truncate_by_maxlen(File.join(TyphoeusDVR::RECORD_OUTPUT_DIR, TyphoeusDVR::RECORD_FILENAME_PREFIX + filename))
+    end
+
+    def truncate_by_maxlen(filename, maxlength = 250)
+      filename.length > maxlength ? "#{filename[0...maxlength]}---" : filename
     end
 
     def record_response(response)
